@@ -1,13 +1,364 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busan Trip！🇰🇷</title>
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 自定義變數與樣式 */
+        :root {
+            --chew-yellow: #F9F193;
+            --chew-blue: #D3EDF4;
+            --chew-coral: #F95543;
+            --chew-pink: #FCE7E5;
+            --naver-text: #D95A4B;
+            --naver-bg: #D1F985;
+            --coffee: #5d4037;
+            --grey-text: #757575;
+        }
 
+        body {
+            background-color: var(--chew-pink);
+            color: var(--coffee);
+            font-family: 'Inter', 'Noto Sans TC', 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 隱藏滾動條但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 自定義 Tailwind 類別 */
+        .bg-chew-yellow { background-color: var(--chew-yellow); }
+        .bg-chew-blue { background-color: var(--chew-blue); }
+        .bg-chew-coral { background-color: var(--chew-coral); }
+        .bg-chew-pink { background-color: var(--chew-pink); }
+        .bg-naver-bg { background-color: var(--naver-bg); }
+        
+        .text-chew-coral { color: var(--chew-coral); }
+        .text-naver-text { color: var(--naver-text); }
+        .text-coffee { color: var(--coffee); }
+        .text-grey-text { color: var(--grey-text); }
+        
+        .border-chew-pink { border-color: var(--chew-pink); }
+        .border-chew-coral { border-color: var(--chew-coral); }
+
+        /* 卡片懸浮效果 */
+        .trip-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 詳情視窗內的圖片容器 */
+        .detail-image-container {
+            max-height: 300px;
+            overflow: hidden;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- 載入必要的庫 (CDN) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { motion, AnimatePresence, Reorder } = FramerMotion;
+        const { format, parseISO } = dateFns;
+
+        // Lucide 圖標組件
+        const LucideIcon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const STORAGE_KEY = 'busan_trip_data_v1';
+
+        const App = () => {
+            const [activeTrip, setActiveTrip] = useState(null);
+            const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+            const [isAddingActivity, setIsAddingActivity] = useState(false);
+            const [editingActivityId, setEditingActivityId] = useState(null);
+            const [selectedActivity, setSelectedActivity] = useState(null);
+            const [newActivity, setNewActivity] = useState({
+                time: '', title: '', location: '', notes: '', naverMapUrl: '', imageUrl: ''
+            });
+
+            // 初始化資料
+            useEffect(() => {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                let currentTrip;
+                
+                if (stored) {
+                    currentTrip = JSON.parse(stored);
+                } else {
+                    const defaultDates = ['2026-04-23', '2026-04-24', '2026-04-25', '2026-04-26', '2026-04-27'];
+                    currentTrip = {
+                        id: 'busan-2026',
+                        name: 'Busan Trip！🇰🇷',
+                        itinerary: defaultDates.map(date => ({
+                            id: Math.random().toString(36).substr(2, 9),
+                            date,
+                            activities: []
+                        }))
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrip));
+                }
+                setActiveTrip(currentTrip);
+            }, []);
+
+            const saveTrip = (updated) => {
+                setActiveTrip(updated);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            };
+
+            const handleSaveActivity = () => {
+                if (!newActivity.title) return;
+                const newItinerary = [...activeTrip.itinerary];
+                if (editingActivityId) {
+                    newItinerary[selectedDayIdx].activities = newItinerary[selectedDayIdx].activities.map(a => 
+                        a.id === editingActivityId ? { ...a, ...newActivity } : a
+                    );
+                } else {
+                    newItinerary[selectedDayIdx].activities.push({
+                        ...newActivity,
+                        id: Math.random().toString(36).substr(2, 9)
+                    });
+                }
+                saveTrip({ ...activeTrip, itinerary: newItinerary });
+                closeModal();
+            };
+
+            const closeModal = () => {
+                setIsAddingActivity(false);
+                setEditingActivityId(null);
+                setNewActivity({ time: '', title: '', location: '', notes: '', naverMapUrl: '', imageUrl: '' });
+            };
+
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setNewActivity(prev => ({ ...prev, imageUrl: reader.result }));
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            if (!activeTrip) return <div className="flex items-center justify-center h-screen text-coffee">載入中...</div>;
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Header */}
+                    <header className="bg-white border-b border-[var(--chew-pink)] px-6 py-6 sticky top-0 z-20">
+                        <h1 className="text-2xl font-bold text-center text-coffee tracking-tight">{activeTrip.name}</h1>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-1 max-w-2xl w-full mx-auto p-4 md:p-8">
+                        {/* Day Tabs */}
+                        <div className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar border-b border-black/5 mb-6">
+                            {activeTrip.itinerary.map((day, idx) => (
+                                <button
+                                    key={day.id}
+                                    onClick={() => setSelectedDayIdx(idx)}
+                                    className={`shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border ${
+                                        selectedDayIdx === idx 
+                                        ? 'bg-chew-coral text-white border-chew-coral shadow-md scale-105' 
+                                        : 'bg-white text-grey-text border-[var(--chew-pink)] hover:border-chew-coral'
+                                    }`}
+                                >
+                                    {format(parseISO(day.date), 'M/d')}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Activity List */}
+                        <Reorder.Group 
+                            axis="y" 
+                            values={activeTrip.itinerary[selectedDayIdx].activities} 
+                            onReorder={(newActs) => {
+                                const newItin = [...activeTrip.itinerary];
+                                newItin[selectedDayIdx].activities = newActs;
+                                saveTrip({ ...activeTrip, itinerary: newItin });
+                            }}
+                            className="space-y-4 pb-32"
+                        >
+                            <AnimatePresence mode="popLayout">
+                                {activeTrip.itinerary[selectedDayIdx].activities.map((act) => (
+                                    <Reorder.Item 
+                                        key={act.id} 
+                                        value={act}
+                                        onClick={() => setSelectedActivity(act)}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="bg-white rounded-3xl overflow-hidden flex flex-col cursor-pointer transition-all border border-[var(--chew-pink)] trip-card"
+                                    >
+                                        <div className="p-5 flex items-start gap-5">
+                                            {/* Left: Time */}
+                                            <div className="flex flex-col items-center justify-center min-w-[70px] py-1">
+                                                <span className="text-[10px] font-bold text-grey-text/50 tracking-widest mb-1">TIME</span>
+                                                <span className="text-2xl font-bold text-coffee tracking-tighter">{act.time || '--:--'}</span>
+                                            </div>
+                                            
+                                            {/* Right: Content */}
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-lg text-coffee mb-3 leading-tight">{act.title}</h4>
+                                                <div className="flex items-center gap-2">
+                                                    {act.naverMapUrl && (
+                                                        <span className="px-3 py-1.5 bg-naver-bg text-naver-text text-[9px] font-bold rounded-lg shadow-sm">Naver Map</span>
+                                                    )}
+                                                    <div className="ml-auto flex gap-1">
+                                                        <button onClick={(e) => { e.stopPropagation(); setEditingActivityId(act.id); setNewActivity(act); setIsAddingActivity(true); }} className="p-2 text-grey-text/40 hover:text-blue-400 transition-colors"><LucideIcon name="edit-2" size={16} /></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); if(confirm('確定要刪除此行程嗎？')) { const itin = [...activeTrip.itinerary]; itin[selectedDayIdx].activities = itin[selectedDayIdx].activities.filter(a => a.id !== act.id); saveTrip({...activeTrip, itinerary: itin}); } }} className="p-2 text-grey-text/40 hover:text-red-400 transition-colors"><LucideIcon name="trash-2" size={16} /></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Drag Handle */}
+                                            <div className="h-full flex items-center text-grey-text/10 cursor-grab active:cursor-grabbing" onClick={e => e.stopPropagation()}>
+                                                <LucideIcon name="grip-vertical" size={18} />
+                                            </div>
+                                        </div>
+                                    </Reorder.Item>
+                                ))}
+                            </AnimatePresence>
+
+                            {activeTrip.itinerary[selectedDayIdx].activities.length === 0 && (
+                                <div className="py-20 text-center opacity-30">
+                                    <LucideIcon name="calendar-days" size={48} className="mx-auto mb-4" />
+                                    <p className="text-sm font-medium">今天還沒有安排行程</p>
+                                </div>
+                            )}
+                        </Reorder.Group>
+                    </main>
+
+                    {/* Fixed Add Button */}
+                    <div className="fixed bottom-8 right-8 z-30">
+                        <button 
+                            onClick={() => setIsAddingActivity(true)} 
+                            className="w-16 h-16 bg-chew-blue text-coffee rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                        >
+                            <LucideIcon name="plus" size={32} />
+                        </button>
+                    </div>
+
+                    {/* Modals */}
+                    <AnimatePresence>
+                        {/* Add/Edit Modal */}
+                        {isAddingActivity && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeModal} className="absolute inset-0 bg-coffee/40 backdrop-blur-sm" />
+                                <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl border border-[var(--chew-pink)]">
+                                    <div className="p-6 border-b flex justify-between items-center bg-chew-yellow/20">
+                                        <h3 className="text-lg font-bold text-coffee">{editingActivityId ? '編輯行程' : '新增行程'}</h3>
+                                        <button onClick={closeModal} className="p-1 hover:bg-black/5 rounded-full"><LucideIcon name="x" /></button>
+                                    </div>
+                                    <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-grey-text mb-1 block">行程名稱</label>
+                                            <input type="text" placeholder="例如：海雲台沙灘" value={newActivity.title} onChange={e => setNewActivity({...newActivity, title: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-chew-yellow" />
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-grey-text mb-1 block">時間</label>
+                                                <input type="text" placeholder="例如：10:00" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-chew-yellow" />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-grey-text mb-1 block">地址</label>
+                                                <textarea placeholder="輸入詳細地址..." value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-chew-yellow resize-none" rows="2" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-grey-text mb-1 block">Naver Map 連結</label>
+                                            <input type="text" placeholder="貼上地圖連結..." value={newActivity.naverMapUrl} onChange={e => setNewActivity({...newActivity, naverMapUrl: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-chew-yellow" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-grey-text mb-1 block">備註</label>
+                                            <textarea placeholder="想記下的細節..." value={newActivity.notes} onChange={e => setNewActivity({...newActivity, notes: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-chew-yellow resize-none" rows="3" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-grey-text mb-1 block">照片</label>
+                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="text-xs text-grey-text block w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-chew-blue file:text-coffee hover:file:bg-blue-100" />
+                                            {newActivity.imageUrl && <img src={newActivity.imageUrl} className="mt-3 w-full h-32 object-cover rounded-xl border border-chew-pink" />}
+                                        </div>
+                                    </div>
+                                    <div className="p-6 border-t bg-gray-50">
+                                        <button onClick={handleSaveActivity} className="w-full py-4 bg-chew-coral text-white font-bold rounded-2xl shadow-lg shadow-chew-coral/20 active:scale-[0.98] transition-all">儲存行程</button>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+
+                        {/* Detail View Modal */}
+                        {selectedActivity && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedActivity(null)} className="absolute inset-0 bg-coffee/60 backdrop-blur-md" />
+                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-white w-full max-w-md rounded-[3rem] overflow-hidden shadow-2xl border border-[var(--chew-pink)]" onClick={e => e.stopPropagation()}>
+                                    <div className="p-6 border-b flex justify-between items-center bg-chew-blue/20">
+                                        <h3 className="font-bold text-coffee">行程詳情</h3>
+                                        <button onClick={() => setSelectedActivity(null)} className="p-1 hover:bg-black/5 rounded-full"><LucideIcon name="x" /></button>
+                                    </div>
+                                    <div className="p-8 space-y-6 max-h-[80vh] overflow-y-auto no-scrollbar">
+                                        <div className="flex gap-5 items-center">
+                                            <div className="bg-chew-pink/40 p-4 rounded-2xl text-center min-w-[80px]">
+                                                <LucideIcon name="clock" size={16} className="mx-auto mb-1 opacity-40" />
+                                                <span className="text-sm font-bold text-coffee">{selectedActivity.time || '--:--'}</span>
+                                            </div>
+                                            <div>
+                                                <h2 className="text-2xl font-bold text-coffee leading-tight">{selectedActivity.title}</h2>
+                                                <p className="text-xs text-grey-text mt-2 flex items-start gap-1"><LucideIcon name="map-pin" size={12} className="mt-0.5 shrink-0" />{selectedActivity.location || '未填寫地址'}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        {selectedActivity.notes && (
+                                            <div className="bg-chew-yellow/10 p-5 rounded-2xl border border-chew-yellow/20">
+                                                <span className="text-[9px] font-bold text-coffee/30 tracking-widest uppercase block mb-2">備註</span>
+                                                <p className="text-sm text-coffee leading-relaxed whitespace-pre-wrap">{selectedActivity.notes}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {selectedActivity.imageUrl && (
+                                            <div className="detail-image-container shadow-inner">
+                                                <img src={selectedActivity.imageUrl} className="w-full h-auto object-cover" />
+                                            </div>
+                                        )}
+                                        
+                                        {selectedActivity.naverMapUrl && (
+                                            <a href={selectedActivity.naverMapUrl} target="_blank" className="flex items-center justify-center gap-2 w-full py-4 bg-naver-bg text-naver-text font-bold rounded-2xl shadow-lg shadow-naver-bg/30 hover:opacity-90 transition-all">
+                                                <LucideIcon name="map" size={20} />
+                                                在 Naver Map 中查看
+                                            </a>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
