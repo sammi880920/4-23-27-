@@ -1,13 +1,194 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busan Trip！🇰🇷</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-outer-bg: #015f7e;
+            --color-header-bg: #7aced7;
+            --color-header-border: #e7fbe3;
+            --color-prep-bg: #fcf1bb;
+            --color-shop-bg: #ffe7e7;
+            --color-checklist-text: #583722;
+            --color-chew-coral: #e2714c;
+            --color-coffee: #5d4037;
+            --color-grey-text: #757575;
+            --color-naver-bg: #d8f8a0;
+            --color-naver-text: #e12157;
+        }
 
+        body {
+            background-color: var(--color-outer-bg);
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .main-container {
+            background-image: url('https://storage.googleapis.com/m-infra-prod-ais-pre-assets/u7m33byq44epywe2ihgjwd/371098637623/9103e3a9-e374-4536-a365-546051786586.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: local;
+            background-repeat: no-repeat;
+            background-color: white;
+        }
+
+        .header-title {
+            font-family: Georgia, serif;
+            font-style: italic;
+            color: #ffffff;
+        }
+
+        .custom-dashed-border {
+            border-style: dashed;
+            border-width: 6px;
+            border-color: var(--color-header-border);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React & Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        // Lucide Icon Component Wrapper
+        const Icon = ({ name, size = 24, className = "", style = {} }) => {
+            const LucideIcon = lucide.icons[name];
+            if (!LucideIcon) return null;
+            return <i data-lucide={name} className={className} style={{ width: size, height: size, ...style }}></i>;
+        };
+
+        const App = () => {
+            const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+            const [activeChecklist, setActiveChecklist] = useState(null);
+            const [selectedActivity, setSelectedActivity] = useState(null);
+            
+            // 初始行程資料
+            const [trip, setTrip] = useState({
+                name: 'Busan Trip！🇰🇷',
+                itinerary: [
+                    { id: '1', date: '2026-04-23', dayName: '四', activities: [] },
+                    { id: '2', date: '2026-04-24', dayName: '五', activities: [] },
+                    { id: '3', date: '2026-04-25', dayName: '六', activities: [] },
+                    { id: '4', date: '2026-04-26', dayName: '日', activities: [] },
+                    { id: '5', date: '2026-04-27', dayName: '一', activities: [] }
+                ],
+                preparation: [],
+                shoppingList: []
+            });
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [selectedDayIdx, activeChecklist, selectedActivity]);
+
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Header */}
+                    <header className="custom-dashed-border px-6 py-4 sticky top-0 z-20" style={{ backgroundColor: '#7aced7' }}>
+                        <div className="max-w-2xl mx-auto">
+                            <h1 className="header-title text-2xl text-center font-bold">
+                                {trip.name}
+                            </h1>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="main-container flex-1 max-w-2xl w-full mx-auto p-4 md:p-8 shadow-2xl my-4 rounded-[40px] border border-white/40">
+                        <div className="space-y-6">
+                            {/* Quick Access Buttons */}
+                            <div className="grid grid-cols-2 gap-3 mb-2">
+                                <button 
+                                    onClick={() => setActiveChecklist('preparation')}
+                                    className="flex items-center justify-center gap-2 py-3 rounded-2xl shadow-md font-bold text-sm"
+                                    style={{ backgroundColor: '#fcf1bb', color: '#583722' }}
+                                >
+                                    <span className="w-4 h-4"><Icon name="Package" size={18} /></span>
+                                    行前準備
+                                </button>
+                                <button 
+                                    onClick={() => setActiveChecklist('shoppingList')}
+                                    className="flex items-center justify-center gap-2 py-3 rounded-2xl shadow-md font-bold text-sm"
+                                    style={{ backgroundColor: '#ffe7e7', color: '#583722' }}
+                                >
+                                    <span className="w-4 h-4"><Icon name="ShoppingBag" size={18} /></span>
+                                    購物清單
+                                </button>
+                            </div>
+
+                            {/* Day Tabs */}
+                            <div className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar border-b border-black/5 mb-4">
+                                {trip.itinerary.map((day, idx) => (
+                                    <button
+                                        key={day.id}
+                                        onClick={() => setSelectedDayIdx(idx)}
+                                        className={`shrink-0 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border flex flex-col items-center gap-0.5 ${
+                                            selectedDayIdx === idx 
+                                                ? "bg-[#e2714c] text-white border-[#e2714c] shadow-md" 
+                                                : "bg-white text-[#757575] border-pink-100"
+                                        }`}
+                                    >
+                                        <span className="text-[11px]">{day.date.slice(5)}</span>
+                                        <span className="text-[9px] opacity-80">（{day.dayName}）</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Activity List Placeholder */}
+                            <div className="space-y-4">
+                                <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-black/5">
+                                    <p className="text-[#5d4037] font-medium opacity-50">點擊右下角按鈕新增行程</p>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* Floating Action Button */}
+                    <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#e2714c] text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
+                        <Icon name="Plus" size={28} />
+                    </button>
+
+                    {/* Checklist Modal Placeholder */}
+                    {activeChecklist && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                            <div className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+                                <div className="p-5 flex justify-between items-center" style={{ backgroundColor: activeChecklist === 'preparation' ? '#fcf1bb' : '#ffe7e7' }}>
+                                    <h3 className="font-bold text-[#583722]">
+                                        {activeChecklist === 'preparation' ? '行前準備' : '購物清單'}
+                                    </h3>
+                                    <button onClick={() => setActiveChecklist(null)}><Icon name="X" size={20} /></button>
+                                </div>
+                                <div className="p-6 text-center text-sm text-gray-400">
+                                    清單功能已就緒，可於此新增項目。
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
