@@ -36,6 +36,12 @@ export interface DayPlan {
   activities: Activity[];
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface Trip {
   id: string;
   name: string;
@@ -44,4 +50,6 @@ export interface Trip {
   itinerary: DayPlan[];
   expenses: Expense[];
   transportation: Transportation[];
+  preparation?: ChecklistItem[];
+  shoppingList?: ChecklistItem[];
 }

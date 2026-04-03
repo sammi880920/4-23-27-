@@ -8,21 +8,36 @@
   /* Chew Palette from Image */
   --color-chew-yellow: #F9F193;
   --color-chew-blue: #D3EDF4;
-  --color-chew-coral: #F95543;
+  --color-chew-coral: #e2714c;
   --color-chew-pink: #FCE7E5;
   
   /* Naver Map Specific Colors */
-  --color-naver-text: #D95A4B;
-  --color-naver-bg: #D1F985;
+  --color-naver-text: #e12157;
+  --color-naver-bg: #d5fb97;
+  
+  /* Checklist Specific Colors */
+  --color-prep-bg: #fcf1bb;
+  --color-shop-bg: #ffe7e7;
+  --color-checklist-text: #583722;
   
   --color-coffee: #5d4037;
   --color-grey-text: #757575;
-  --color-bg-soft: #fffaf0;
+  --color-outer-bg: #015f7e;
+  --color-header-bg: #7aced7;
+  --color-header-border: #e7fbe3;
 }
 
 @layer base {
+  html, body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
   body {
-    @apply bg-[var(--color-chew-pink)] text-[var(--color-coffee)] font-sans antialiased;
+    @apply text-[var(--color-coffee)] font-sans antialiased;
+    background-color: var(--color-outer-bg) !important;
+    background-image: none !important;
+    min-height: 100vh;
   }
 }
 
