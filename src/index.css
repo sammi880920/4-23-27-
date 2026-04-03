@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans TC", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", "Noto Sans TC", "Noto Sans KR", sans-serif;
+
+  /* Chew Palette from Image */
+  --color-chew-yellow: #F9F193;
+  --color-chew-blue: #D3EDF4;
+  --color-chew-coral: #F95543;
+  --color-chew-pink: #FCE7E5;
+  
+  /* Naver Map Specific Colors */
+  --color-naver-text: #D95A4B;
+  --color-naver-bg: #D1F985;
+  
+  --color-coffee: #5d4037;
+  --color-grey-text: #757575;
+  --color-bg-soft: #fffaf0;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-chew-pink)] text-[var(--color-coffee)] font-sans antialiased;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass-card {
+  @apply bg-white/90 backdrop-blur-md border border-white/20 shadow-sm;
+}
